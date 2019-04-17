@@ -1,0 +1,23 @@
+{
+    "name": "seaman911/think-addons",
+    "description": "The ThinkPHP5.1 Addons Package",
+    "license": "Apache-2.0",
+    "authors": [
+        {
+            "name": "seaman911",
+            "email": "2144808@qq.com"
+        }
+    ],
+    "minimum-stability": "dev",
+    "require": {
+        "topthink/framework": "5.1.*"
+    },
+    "autoload": {
+        "psr-4": {
+            "think\\": "src/"
+        },
+        "files": [
+            "src/helper.php"
+        ]
+    }
+}
