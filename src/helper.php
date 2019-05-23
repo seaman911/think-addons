@@ -20,21 +20,28 @@ use think\facade\Route;
 $appPath = (new App())->getAppPath();
 $addons_path = dirname($appPath) . DIRECTORY_SEPARATOR . 'addons' . DIRECTORY_SEPARATOR;
 Env::set('addons_path', $addons_path);
+
+$var_ = \config('var_pathinfo');
+isset($_GET[$var_]) and strpos($_GET[$var_], '/addons/') === 0 and strpos($_GET[$var_], '/addons/execute') === false and $_GET[$var_] = str_replace('/addons/', '/addons/execute/', $_GET[$var_]);
+unset($var_);
 // 定义路由
 $rulPath =   \think\facade\Request::path();
 
 if(
     $rulPath
-    and strpos($rulPath,'addons/execute/') !== false
-    and $rulPath = str_replace('addons/execute/', '', $rulPath)
-    and $rulPath = explode('-', $rulPath)
-    and count($rulPath) >= 4
+    and $rulPath = explode('/', $rulPath)
+    and isset($rulPath[2])
+    and $rulPath[0] == 'addons'
+    and $_substr_count = substr_count($rulPath[2], '-')
+    and $_substr_count > 1
 ){
-    Route::any('addons/execute/:addon-:module-:control-:action', "\\think\\addons\\Route@execute");
-}else{
-    Route::any('addons/execute/:addon-:control-:action', "\\think\\addons\\Route@execute");
+    if($_substr_count > 2){
+        Route::any('addons/execute/:addon-:module-:control-:action', "\\think\\addons\\Route@execute");
+    }else{
+        Route::any('addons/execute/:addon-:control-:action', "\\think\\addons\\Route@execute");
+    }
 }
-
+unset($rulPath, $_substr_count);
 
 // 如果插件目录不存在则创建
 if (!is_dir($addons_path)) {
@@ -57,6 +64,7 @@ Hook::add('app_init', function () {
     if (empty($config)) {
         // 读取插件目录及钩子列表
         $base = get_class_methods("\\think\\Addons");
+        echo 1;
         // 读取插件目录中的php文件
         foreach (glob(Env::get('addons_path') . '*/*.php') as $addons_file) {
             // 格式化路径信息
@@ -86,7 +94,7 @@ Hook::add('app_init', function () {
         }
         cache('addons', $config);
     }
-    config('addons', $config);
+    config('addons', $config);echo 2;
 });
 
 // 闭包初始化行为
@@ -211,6 +219,18 @@ function addon_url($url, $param = [], $suffix = true, $domain = false)
         $actions = "{$addons}-{$controller}-{$action}";
     }
 
+    return url("addons/{$actions}", $param, $suffix, $domain);
+    //return url("addons/execute/{$actions}", $param, $suffix, $domain);
+}
 
-    return url("addons/execute/{$actions}", $param, $suffix, $domain);
+
+function addon_config($name)
+{
+    $class = get_addon_class($name);
+    if (class_exists($class)) {
+        $addon = new $class();
+        return $addon->getConfig();
+    } else {
+        return [];
+    }
 }
